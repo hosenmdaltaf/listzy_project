@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Connect Channels - Listzy{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Connect Your Channels</h1>
+        <p class="text-gray-600 mt-2">Connect your marketplaces and social media accounts to start listing products</p>
+    </div>
+
+    <!-- Marketplaces Section -->
+    <div class="mb-12">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">🛍️ Marketplaces</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for platform in platforms %}
+                {% if platform.type == 'marketplace' %}
+                <div class="bg-white rounded-lg shadow border border-gray-200 p-6 hover:shadow-lg transition duration-200">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">{{ platform.icon }}</div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ platform.name }}</h3>
+                        <p class="text-gray-600 text-sm mb-4">{{ platform.description }}</p>
+                        
+                        {% if platform.connected %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
+                                ✓ Connected
+                            </span>
+                            <div>
+                                <a href="{% url 'channels:list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Manage Connection
+                                </a>
+                            </div>
+                        {% else %}
+                            <div>
+                                {% if platform.id == 'shopify' %}
+                                    <a href="{% url 'channels:shopify_connect' %}" 
+                                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200">
+                                        Connect {{ platform.name }}
+                                    </a>
+                                {% elif platform.id == 'etsy' %}
+                                    <button onclick="alert('Etsy integration coming soon!')" 
+                                            class="bg-gray-400 text-white px-4 py-2 rounded-lg font-medium cursor-not-allowed">
+                                        Coming Soon
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Social Media Section -->
+    <div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">📱 Social Media</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for platform in platforms %}
+                {% if platform.type == 'social' %}
+                <div class="bg-white rounded-lg shadow border border-gray-200 p-6 hover:shadow-lg transition duration-200">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">{{ platform.icon }}</div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ platform.name }}</h3>
+                        <p class="text-gray-600 text-sm mb-4">{{ platform.description }}</p>
+                        
+                        {% if platform.connected %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
+                                ✓ Connected
+                            </span>
+                            <div>
+                                <a href="{% url 'channels:list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Manage Connection
+                                </a>
+                            </div>
+                        {% else %}
+                            <button onclick="alert('Social media integrations coming soon!')" 
+                                    class="bg-gray-400 text-white px-4 py-2 rounded-lg font-medium cursor-not-allowed">
+                                Coming Soon
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-12 bg-blue-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Need Help?</h3>
+        <p class="text-gray-600 mb-4">
+            Check out our integration guides to learn how to connect your accounts and start selling everywhere.
+        </p>
+        <a href="#" class="text-blue-600 hover:text-blue-800 font-medium">View Integration Guides →</a>
+    </div>
+</div>
+{% endblock %}

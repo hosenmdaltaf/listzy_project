@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Product - Listzy{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ action }} Product</h1>
+            <p class="text-gray-600 mt-1">{% if action == 'Create' %}Add a new product to your catalog{% else %}Update product details{% endif %}</p>
+        </div>
+        
+        {% if product %}
+        <div class="space-x-3">
+            <a href="{% url 'products:listings' product.id %}" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200">
+                📡 Publish Product
+            </a>
+            <a href="{% url 'products:list' %}" 
+               class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition duration-200">
+                Back to Products
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+        
+        <!-- Product Details -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Product Details</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Product Title *
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                    
+                    {% if product and not product.ai_generated_description %}
+                    <div class="mt-2">
+                        <button type="button" onclick="generateAIDescription()" 
+                                class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            ✨ Generate AI Description
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Price *
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-500">$</span>
+                        <input type="number" 
+                               id="{{ form.price.id_for_label }}"
+                               name="{{ form.price.name }}"
+                               value="{{ form.price.value|default:'' }}"
+                               step="0.01"
+                               min="0"
+                               class="pl-8 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="0.00">
+                    </div>
+                    {% if form.price.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.price.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.sku.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        SKU
+                    </label>
+                    {{ form.sku }}
+                    {% if form.sku.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.sku.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="md:col-span-2 flex space-x-6">
+                    <div class="flex items-center">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                            Product is active
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        {{ form.is_featured }}
+                        <label for="{{ form.is_featured.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                            Featured product
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Images -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Product Images</h2>
+            <p class="text-sm text-gray-600 mb-4">Upload high-quality images of your product. The first image will be used as the primary image.</p>
+            
+            <div id="image-formset">
+                {{ image_formset.management_form }}
+                
+                {% for form in image_formset %}
+                <div class="image-form border border-gray-200 rounded-lg p-4 mb-4">
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Image
+                            </label>
+                            {{ form.image }}
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Alt Text
+                            </label>
+                            {{ form.alt_text }}
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                {{ form.is_primary }}
+                                <label class="ml-2 text-sm text-gray-700">Primary</label>
+                            </div>
+                            
+                            {% if form.DELETE %}
+                                <div class="flex items-center">
+                                    {{ form.DELETE }}
+                                    <label class="ml-2 text-sm text-red-600">Delete</label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- AI Generated Content (if exists) -->
+        {% if product.ai_generated_description %}
+        <div class="bg-blue-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">✨ AI Generated Description</h3>
+            <p class="text-gray-700 mb-4">{{ product.ai_generated_description }}</p>
+            <button type="button" onclick="useAIDescription()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                Use This Description
+            </button>
+        </div>
+        {% endif %}
+
+        <!-- Submit Buttons -->
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'products:list' %}" 
+               class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2 rounded-lg font-medium transition duration-200">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                {{ action }} Product
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function generateAIDescription() {
+    {% if product %}
+    const button = event.target;
+    const originalText = button.textContent;
+    
+    button.textContent = '🤖 Generating...';
+    button.disabled = true;
+    
+    fetch(`{% url 'products:ai_description' product.id %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Failed to generate AI description. Please try again.');
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+    {% endif %}
+}
+
+function useAIDescription() {
+    const aiDescription = `{{ product.ai_generated_description|escapejs }}`;
+    const descriptionField = document.querySelector('#id_description');
+    descriptionField.value = aiDescription;
+    descriptionField.focus();
+}
+</script>
+{% endblock %}

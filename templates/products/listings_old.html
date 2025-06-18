@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Publish {{ product.title }} - Listzy{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Publish Product</h1>
+            <p class="text-gray-600 mt-1">Manage where "{{ product.title }}" is listed</p>
+        </div>
+        <div class="space-x-3">
+            <button onclick="publishToAllChannels('{{ product.id }}')" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200">
+                📡 Publish to All
+            </button>
+            <a href="{% url 'products:detail' product.id %}" 
+               class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition duration-200">
+                Back to Product
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Summary -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <div class="flex items-center space-x-4">
+            {% if product.primary_image %}
+                <img src="{{ product.primary_image.image.url }}" 
+                     alt="{{ product.title }}" 
+                     class="w-20 h-20 rounded-lg object-cover">
+            {% else %}
+                <div class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+            {% endif %}
+            
+            <div class="flex-1">
+                <h2 class="text-xl font-semibold text-gray-900">{{ product.title }}</h2>
+                <p class="text-gray-600 mt-1">{{ product.description|truncatewords:20 }}</p>
+                <div class="flex items-center mt-2 space-x-4">
+                    <span class="text-lg font-bold text-gray-900">${{ product.price }}</span>
+                    {% if product.sku %}
+                        <span class="text-sm text-gray-500">SKU: {{ product.sku }}</span>
+                    {% endif %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if product.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {% if product.is_active %}Active{% else %}Draft{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Channel Listings -->
+    {% if channel_data %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for data in channel_data %}
+            <div class="bg-white rounded-lg shadow border border-gray-200 p-6 channel-item">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            {% if data.channel.platform == 'shopify' %}🛍️{% elif data.channel.platform == 'etsy' %}🎨{% elif data.channel.platform == 'woocommerce' %}🛒{% endif %}
+                            {{ data.channel.get_platform_display }}
+                        </h3>
+                        {% if data.channel.shop_name %}
+                            <p class="text-sm text-gray-600">{{ data.channel.shop_name }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <span class="status-indicator inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if data.listing %}
+                                    {% if data.listing.status == 'published' %}bg-green-100 text-green-800
+                                    {% elif data.listing.status == 'failed' %}bg-red-100 text-red-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {% if data.listing %}
+                            {% if data.listing.status == 'published' %}✓ Published
+                            {% elif data.listing.status == 'failed' %}✗ Failed
+                            {% elif data.listing.status == 'pending' %}⏳ Pending
+                            {% else %}📝 {{ data.listing.get_status_display }}{% endif %}
+                        {% else %}Not Published{% endif %}
+                    </span>
+                </div>
+                
+                <!-- Channel Status -->
+                <div class="mb-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="connection-indicator {% if data.channel.status == 'active' %}active{% elif data.channel.status == 'error' %}error{% else %}inactive{% endif %}"></div>
+                        <span class="text-sm text-gray-600">
+                            {% if data.channel.status == 'active' %}Connected
+                            {% elif data.channel.status == 'error' %}Connection Error
+                            {% else %}{{ data.channel.get_status_display }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Listing Details -->
+                {% if data.listing %}
+                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                        <div class="text-sm space-y-1">
+                            {% if data.listing.platform_url %}
+                                <div>
+                                    <a href="{{ data.listing.platform_url }}" target="_blank" 
+                                       class="text-blue-600 hover:text-blue-800 font-medium">
+                                        View on {{ data.channel.get_platform_display }} →
+                                    </a>
+                                </div>
+                            {% endif %}
+                            
+                            {% if data.listing.last_synced %}
+                                <div class="text-gray-500">
+                                    Last synced: {{ data.listing.last_synced|date:"M d, Y g:i A" }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if data.listing.error_message %}
+                                <div class="text-red-600 text-xs mt-2">
+                                    Error: {{ data.listing.error_message }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="space-y-2">
+                    {% if data.can_publish %}
+                        {% if data.listing and data.listing.status == 'published' %}
+                            <button onclick="publishToChannel('{{ product.id }}', '{{ data.channel.id }}')" 
+                                    class="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                                🔄 Update Listing
+                            </button>
+                        {% else %}
+                            <button onclick="publishToChannel('{{ product.id }}', '{{ data.channel.id }}')" 
+                                    class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                                📡 Publish Now
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <div class="w-full bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm text-center">
+                            {% if data.channel.status == 'error' %}Fix Connection First
+                            {% else %}Channel Not Available{% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <a href="{% url 'channels:test_connection' data.channel.id %}" 
+                       class="block w-full text-center border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        Test Connection
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- No Channels Empty State -->
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No channels connected</h3>
+            <p class="mt-1 text-sm text-gray-500">Connect your marketplaces to start publishing products.</p>
+            <div class="mt-6">
+                <a href="{% url 'channels:connect' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Connect Channels
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Hidden CSRF Token for JavaScript -->
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+<script>
+function publishToAllChannels(productId) {
+    const button = event.target;
+    const originalText = button.textContent;
+    
+    button.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span>Publishing...';
+    button.disabled = true;
+    
+    fetch(`/products/${productId}/publish-all/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            
+            // Show detailed results if available
+            if (data.results) {
+                setTimeout(() => {
+                    showPublishingResults(data.results);
+                }, 1000);
+            }
+            
+            // Refresh page after short delay
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Publishing error:', error);
+        showToast('Publishing failed. Please try again.', 'error');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function publishToChannel(productId, channelId) {
+    const button = event.target;
+    const originalText = button.textContent;
+    
+    button.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span>Publishing...';
+    button.disabled = true;
+    
+    fetch(`/products/${productId}/publish/${channelId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            
+            // Update UI to show published status
+            const statusElement = button.closest('.channel-item').querySelector('.status-indicator');
+            if (statusElement) {
+                statusElement.textContent = '✓ Published';
+                statusElement.className = 'status-indicator inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+            }
+            
+            // Refresh after a delay to show updated status
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Publishing error:', error);
+        showToast('Publishing failed. Please try again.', 'error');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function showPublishingResults(results) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-semibold mb-4">Publishing Results</h3>
+            <div class="space-y-2">
+                ${results.map(result => `
+                    <div class="flex items-center justify-between p-2 rounded ${result.success ? 'bg-green-50' : 'bg-red-50'}">
+                        <span class="font-medium">${result.channel}</span>
+                        <span class="text-sm ${result.success ? 'text-green-600' : 'text-red-600'}">
+                            ${result.success ? '✓ Success' : '✗ Failed'}
+                        </span>
+                    </div>
+                    ${!result.success ? `<div class="text-xs text-red-500 px-2">${result.message || 'Unknown error'}</div>` : ''}
+                `).join('')}
+            </div>
+            <button onclick="this.closest('.fixed').remove()" 
+                    class="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Close
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 max-w-sm w-full bg-white border-l-4 ${
+        type === 'success' ? 'border-green-500' : 
+        type === 'error' ? 'border-red-500' : 'border-blue-500'
+    } rounded-lg shadow-lg p-4`;
+    
+    toast.innerHTML = `
+        <div class="flex">
+            <div class="flex-1">
+                <p class="text-sm font-medium text-gray-900">${message}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-gray-400 hover:text-gray-600">
+                <span class="sr-only">Close</span>
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 5000);
+}
+
+function getCSRFToken() {
+    // Try multiple ways to get CSRF token
+    let token = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (token) {
+        return token.value;
+    }
+    
+    // Try getting from meta tag
+    token = document.querySelector('meta[name="csrf-token"]');
+    if (token) {
+        return token.getAttribute('content');
+    }
+    
+    // Try getting from cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    
+    return '';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Connect Shopify - Listzy{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-lg shadow p-8">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <div class="text-4xl mb-4">🛍️</div>
+            <h1 class="text-2xl font-bold text-gray-900">Connect Your Shopify Store</h1>
+            <p class="text-gray-600 mt-2">Enter your shop name to connect your Shopify store</p>
+        </div>
+
+        <!-- Form -->
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label for="shop_name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Shop Name *
+                </label>
+                <div class="flex">
+                    <input type="text" 
+                           id="shop_name" 
+                           name="shop_name" 
+                           required
+                           placeholder="your-shop-name"
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <span class="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 text-gray-500 text-sm">
+                        .myshopify.com
+                    </span>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">
+                    Don't include ".myshopify.com" - just enter your shop name
+                </p>
+            </div>
+
+            <button type="submit" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition duration-200">
+                Connect to Shopify
+            </button>
+        </form>
+
+        <!-- Info -->
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 class="text-sm font-medium text-blue-900 mb-1">What happens next?</h3>
+            <ul class="text-xs text-blue-700 space-y-1">
+                <li>• You'll be redirected to Shopify to authorize Listzy</li>
+                <li>• We'll only request permissions to read and manage products</li>
+                <li>• Your store data remains secure and private</li>
+            </ul>
+        </div>
+
+        <!-- Back Link -->
+        <div class="mt-6 text-center">
+            <a href="{% url 'channels:connect' %}" 
+               class="text-gray-600 hover:text-gray-800 text-sm">
+                ← Back to Channel Connections
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

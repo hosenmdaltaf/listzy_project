@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Connected Channels - Listzy{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Connected Channels</h1>
+            <p class="text-gray-600 mt-1">Manage your marketplace and social media connections</p>
+        </div>
+        <a href="{% url 'channels:connect' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200">
+            + Connect Channel
+        </a>
+    </div>
+
+    <!-- Marketplace Channels -->
+    {% if marketplace_channels %}
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">🛍️ Marketplaces</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for channel in marketplace_channels %}
+            <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ channel.get_platform_display }}</h3>
+                        {% if channel.shop_name %}
+                            <p class="text-sm text-gray-600">{{ channel.shop_name }}</p>
+                        {% endif %}
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if channel.status == 'active' %}bg-green-100 text-green-800
+                                {% elif channel.status == 'error' %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {{ channel.get_status_display }}
+                    </span>
+                </div>
+                
+                {% if channel.error_message %}
+                    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-xs text-red-600">{{ channel.error_message }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="text-sm text-gray-500 mb-4">
+                    <p>Connected: {{ channel.connected_at|date:"M d, Y" }}</p>
+                    {% if channel.last_sync %}
+                        <p>Last sync: {{ channel.last_sync|date:"M d, Y g:i A" }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button onclick="testConnection('{{ channel.id }}')" 
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm font-medium transition duration-200">
+                        Test Connection
+                    </button>
+                    <form method="post" action="{% url 'channels:disconnect' channel.id %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                onclick="return confirm('Are you sure you want to disconnect this channel?')"
+                                class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded text-sm font-medium transition duration-200">
+                            Disconnect
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
